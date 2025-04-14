@@ -60,7 +60,7 @@ jobs:
             repository: "hanu14.jfrog.io/ssd-docker"
             image_tag: "${{ github.run_id }}"
 
-    uses: girichinna27/gh-worker/.github/workflows/worker-workflow.yml@main
+    uses: girichinna27/image-file-worker/.github/workflows/worker-workflow.yml@main
     with:
       image_name: ${{ matrix.name }}
       context: ${{ matrix.context }}
