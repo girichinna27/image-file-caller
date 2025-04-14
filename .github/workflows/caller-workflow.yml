@@ -1,5 +1,5 @@
 # .github/workflows/caller-workflow.yml
-name: Build Docker & WAR and Push to JFrog
+name: Build Docker Images, JAR & WAR artifacts; and Push to JFrog Artifactory
 
 on:
   push:
