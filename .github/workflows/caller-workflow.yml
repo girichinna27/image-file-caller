@@ -1,5 +1,5 @@
 # .github/workflows/caller-workflow.yml
-name: Build and Push Docker Images
+name: Build Docker & WAR and Push to JFrog
 
 on:
   push:
@@ -7,10 +7,48 @@ on:
       - main
 
 jobs:
-  build:
+  build-wars:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
+        module: [war-service1, war-service2]
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build WAR for ${{ matrix.module }}
+        run: |
+          cd ${{ matrix.module }}
+          mvn clean package -DskipTests
+
+      - name: Upload WAR to GitHub (Optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.module }}-war
+          path: ${{ matrix.module }}/target/*.war
+
+      - name: Push WAR to JFrog
+        env:
+          JFROG_USERNAME: ${{ secrets.JFROG_USERNAME }}
+          JFROG_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
+        run: |
+          WAR_FILE=$(ls ${{ matrix.module }}/target/*.war | head -n 1)
+          curl -u "$JFROG_USERNAME:$JFROG_PASSWORD" \
+               -T "$WAR_FILE" \
+               "https://hanu14.jfrog.io/artifactory/ssd-war/${{ matrix.module }}/$(basename $WAR_FILE)"
+
+
+  build-docker:
+    strategy:
+      matrix:
+        include:  
           - name: "alpine1"
             context: "./alpine1"
             dockerfile_path: "./alpine1/Dockerfile"
