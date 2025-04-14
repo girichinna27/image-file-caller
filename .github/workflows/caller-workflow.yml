@@ -7,6 +7,43 @@ on:
       - main
 
 jobs:
+  build-jars:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [jar-service1, jar-service2]
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build JAR for ${{ matrix.module }}
+        run: |
+          cd ${{ matrix.module }}
+          mvn clean package -DskipTests
+
+      - name: Upload JAR to GitHub (Optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.module }}-jar
+          path: ${{ matrix.module }}/target/*.jar
+
+      - name: Push JAR to JFrog
+        env:
+          JFROG_USERNAME: ${{ secrets.JFROG_USERNAME }}
+          JFROG_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
+        run: |
+          JAR_FILE=$(ls ${{ matrix.module }}/target/*.jar | head -n 1)
+          curl -u "$JFROG_USERNAME:$JFROG_PASSWORD" \
+               -T "$JAR_FILE" \
+               "https://hanu14.jfrog.io/artifactory/ssd-jar/${{ matrix.module }}/$(basename $JAR_FILE)"
+
   build-wars:
     runs-on: ubuntu-latest
     strategy:
